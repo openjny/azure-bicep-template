@@ -1,0 +1,42 @@
+# build JSON file to validate the syntax
+name: Test modules
+
+on:
+  pull_request:
+    branches:
+     - 'main'
+    paths:
+      - "modules/*"
+      - ".github/workflows/testModules.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      # - uses: azure/login@v1
+      #   with:
+      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Login Azure with service principal
+        shell: bash
+        env:
+          AZURE_APP_ID: ${{ secrets.AZURE_APP_ID }}
+          AZURE_PASSWORD: ${{ secrets.AZURE_PASSWORD }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: |
+          az login --service-principal -u $AZURE_APP_ID -p $AZURE_PASSWORD --tenant $AZURE_TENANT_ID
+      - name: Install Bicep
+        shell: bash
+        run: |
+          az bicep install    
+      - name: Bicep build
+        shell: bash
+        run: |
+          test_files=$(find ./modules -type f -name main.test.bicep)
+          for test_file in ${test_files[@]}; do
+            az bicep build --file $test_file
+          done
+      # - name: GIT Push Json file
+      #   uses: actions-x/commit@v6
+      #   with:
+      #     message: Adding auto compiled bicep json
