@@ -112,7 +112,7 @@ module vpngw '../../modules/vpn-gateway/vpn-gateway.bicep' = if (deployVpnGw) {
   params: {
     location: location
     vnetName: vnetName
-    gatewayName: '${onpremName}-vpngw'
+    gwNameSuffix: '${onpremName}-vpngw'
     enableBgp: true
     asn: 64512
   }

@@ -4,8 +4,8 @@ param location string = resourceGroup().location
 @description('VNet Name')
 param vnetName string
 
-@description('VPN Gateway Name')
-param gatewayName string
+@description('VPN Gateway Name (without prefix "vgw-")')
+param gwNameSuffix string
 
 @description('Gateway SKU Name')
 @allowed([
@@ -58,7 +58,7 @@ var isZoneRedundant = contains(zoneRedundantSkus, skuName)
 // ----------------------------------------------------------------------------
 
 resource pip 'Microsoft.Network/publicIPAddresses@2021-08-01' = {
-  name: 'pip-${gatewayName}'
+  name: 'pip-${gwNameSuffix}'
   location: location
   sku: {
     name: isZoneRedundant ? 'Standard' : 'Basic'
@@ -75,7 +75,7 @@ resource pip 'Microsoft.Network/publicIPAddresses@2021-08-01' = {
 }
 
 resource vgw 'Microsoft.Network/virtualNetworkGateways@2020-06-01' = {
-  name: 'vgw-${gatewayName}'
+  name: 'vgw-${gwNameSuffix}'
   location: location
   properties: {
     gatewayType: 'Vpn'
