@@ -34,7 +34,7 @@ param envName string = 'module-{name}-test'
 
 def normalized_name(name: str) -> str:
     s = name.strip().lower()
-    s = re.sub(r"[^\w\s]", "", s)
+    s = s.replace('_', '-')
     s = re.sub(r"\s+", "-", s)
     return s
 
