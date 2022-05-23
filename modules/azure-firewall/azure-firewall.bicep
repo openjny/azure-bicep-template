@@ -14,7 +14,7 @@ param vnetName string
   'Standard'
   'Premium'
 ])
-param tier string = 'Basic'
+param tier string = 'Standard'
 
 @description('Number of public IP addresses')
 param numPublicIpAddresses int = 1
