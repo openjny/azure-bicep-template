@@ -87,17 +87,18 @@ resource subnetnsg 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
   }
 }
 
-module vm_default01 '../../modules/compute-vm/compute-vm.bicep' = {
+module vm_default_01 '../../modules/compute-vm/compute-vm.bicep' = {
   dependsOn: [
     vnet
   ]
-  name: 'deploy-vm-${onpremName}-default01'
+  name: 'deploy-vm-${onpremName}-01'
   params: {
     location: location
-    vmName: '${onpremName}-default01'
+    vmName: '${onpremName}-01'
     vnetName: vnetName
     subnetName: 'snet-default'
     deployPublicIp: true
+    osType: 'Linux'
     adminUsername: adminUsername
     adminPasswordOrKey: adminPassword
     authenticationType: 'password'
@@ -122,4 +123,4 @@ module vpngw '../../modules/vpn-gateway/vpn-gateway.bicep' = if (deployVpnGw) {
 // Outputs
 // ----------------------------------------------------------------------------
 
-output vm_default01_hostname string = vm_default01.outputs.hostname
+output vm_default_01 string = vm_default_01.outputs.hostname
