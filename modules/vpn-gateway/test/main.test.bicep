@@ -14,7 +14,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
   }
 }
 
-resource afwSubnet 'Microsoft.Network/virtualNetworks/subnets@2020-06-01' = {
+resource gateway_subnet 'Microsoft.Network/virtualNetworks/subnets@2020-06-01' = {
   parent: vnet
   name: 'GatewaySubnet'
   properties: {
@@ -22,9 +22,9 @@ resource afwSubnet 'Microsoft.Network/virtualNetworks/subnets@2020-06-01' = {
   }
 }
 
-module afw '../vpn-gateway.bicep' = {
+module vpn_gateway '../vpn-gateway.bicep' = {
   dependsOn: [
-    afwSubnet
+    gateway_subnet
   ]
   name: 'deploy-${envName}'
   params:{
