@@ -1,3 +1,5 @@
+// vm.bicep - Virtual Machine
+
 @description('Azure region to deploy')
 param location string = resourceGroup().location
 
@@ -28,39 +30,48 @@ param adminPasswordOrKey string = ''
 ])
 param authenticationType string = 'password'
 
-@description('VNet Name')
+@description('VNet name')
 param vnetName string
 
-@description('Subnet Name')
+@description('Subnet name')
 param subnetName string
 
-@description('Specify the private IP address of NIC if needed')
+@description('NIC private IP address (opt)')
 param privateIPAddress string = ''
 
-@description('If true, NIC will have an instance-level Public IP (ILPIP)')
+@description('Load Balancer backend address pool id (opt)')
+param lbBackendPoolId string = ''
+
+@description('Deploys instance-level public IP if true')
 param deployPublicIp bool = false
 
-@description('Domain name label for ILPIP')
+@description('PIP domain name label')
 param publicIpDomainNameLabel string = toLower('${uniqueString(resourceGroup().id, nameSuffix)}')
 
-@description('SKU for the instance-level PIP')
+@description('PIP SKU')
 @allowed([
   'Basic'
   'Standard'
 ])
 param publicIpSku string = 'Standard'
 
-@description('VM size (az vm list-sizes --location <loc>)')
+@description('VM size (see "az vm list-sizes -l <loc>" for details)')
 param vmSize string = 'Standard_B2s'
 
 @description('Disk size in GB')
 param osDiskSize int = 32
 
-@description('Availability Set ID for the VM')
+@description('Availability set Id (opt)')
 param availabilitySetId string = ''
 
-@description('Zone number for the VM')
+@description('Availability zone (opt)')
 param zone string = ''
+
+@description('Enable boot diagnostics')
+param enableBootDiag bool = false
+
+@description('Boot diagnostics storage URI')
+param bootDiagStorageUri string = ''
 
 @description('CustomData')
 param customData string = ''
@@ -111,7 +122,7 @@ var linuxConfigurationForSSH = {
 // Resources
 // ----------------------------------------------------------------------------
 
-resource pip 'Microsoft.Network/publicIPAddresses@2020-05-01' = if (deployPublicIp) {
+resource pip 'Microsoft.Network/publicIPAddresses@2022-09-01' = if (deployPublicIp) {
   name: pipName
   location: location
   sku: {
@@ -129,7 +140,7 @@ resource pip 'Microsoft.Network/publicIPAddresses@2020-05-01' = if (deployPublic
   }
 }
 
-resource nic 'Microsoft.Network/networkInterfaces@2020-05-01' = {
+resource nic 'Microsoft.Network/networkInterfaces@2022-09-01' = {
   name: nicName
   location: location
   properties: {
@@ -140,18 +151,23 @@ resource nic 'Microsoft.Network/networkInterfaces@2020-05-01' = {
           subnet: {
             id: subnetId
           }
-          privateIPAllocationMethod: (empty(privateIPAddress) ? 'Dynamic' : 'Static')
-          privateIPAddress: (empty(privateIPAddress) ? null : privateIPAddress)
+          privateIPAllocationMethod: empty(privateIPAddress) ? 'Dynamic' : 'Static'
+          privateIPAddress: empty(privateIPAddress) ? null : privateIPAddress
           publicIPAddress: !(deployPublicIp) ? null : {
             id: pip.id
           }
+          loadBalancerBackendAddressPools: [
+            {
+              id: lbBackendPoolId
+            }
+          ]
         }
       }
     ]
   }
 }
 
-resource vm 'Microsoft.Compute/virtualMachines@2020-06-01' = {
+resource vm 'Microsoft.Compute/virtualMachines@2022-11-01' = {
   name: vmName
   location: location
   zones: empty(zone) ? null : [
@@ -189,10 +205,16 @@ resource vm 'Microsoft.Compute/virtualMachines@2020-06-01' = {
       computerName: nameSuffix
       adminUsername: adminUsername
       adminPassword: adminPasswordOrKey
-      customData: (empty(customData) ? null : customData)
+      customData: empty(customData) ? null : customData
       linuxConfiguration: (authenticationType == 'ssh' && osType == 'linux') ? linuxConfigurationForSSH : null
       secrets: []
       allowExtensionOperations: true
+    }
+    diagnosticsProfile: (!enableBootDiag || empty(bootDiagStorageUri)) ? null : {
+      bootDiagnostics: {
+        enabled: true
+        storageUri: bootDiagStorageUri
+      }
     }
   }
 }
@@ -200,8 +222,6 @@ resource vm 'Microsoft.Compute/virtualMachines@2020-06-01' = {
 // ----------------------------------------------------------------------------
 // Outputs
 // ----------------------------------------------------------------------------
-
-output nic object = nic
 
 output adminUsername string = adminUsername
 

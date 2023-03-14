@@ -29,7 +29,7 @@ module bastionBasic '../bastion.bicep' = {
   name: 'deploy-bastion-basic'
   params: {
     location: location
-    nameSuffix: '${envName}-basic'
+    nameSuffix: 'basic'
     vnetName: vnetBasic.name
     skuName: 'Basic'
   }
@@ -61,7 +61,7 @@ module bastionStandard '../bastion.bicep' = {
   name: 'deploy-bastion-standard'
   params: {
     location: location
-    nameSuffix: '${envName}-std'
+    nameSuffix: 'std'
     vnetName: vnetStandard.name
     skuName: 'Standard'
   }

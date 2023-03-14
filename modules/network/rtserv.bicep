@@ -1,9 +1,9 @@
-// Azure Route Server
+// rtserv.bicep - Azure Route Server
 
 @description('Region to deploy')
 param location string = resourceGroup().location
 
-@description('Route Server name suffix (e.g. "rs-<suffix>")')
+@description('Route Server name suffix (e.g. "rtserv-<suffix>")')
 param nameSuffix string
 
 @description('VNet name')
@@ -23,14 +23,14 @@ param bgpConnections array = []
 // Variables
 // ----------------------------------------------------------------------------
 
-var rsName = 'rs-${nameSuffix}'
-var pipName = '${rsName}-pip'
+var rtservName = 'rtserv-${nameSuffix}'
+var pipName = '${rtservName}-pip'
 
 // ----------------------------------------------------------------------------
 // Resources
 // ----------------------------------------------------------------------------
 
-resource pip 'Microsoft.Network/publicIPAddresses@2021-08-01' = {
+resource pip 'Microsoft.Network/publicIPAddresses@2022-09-01' = {
   name: pipName
   location: location
   sku: {
@@ -46,8 +46,8 @@ resource pip 'Microsoft.Network/publicIPAddresses@2021-08-01' = {
 // https://docs.microsoft.com/en-us/azure/templates/microsoft.network/virtualhubs?tabs=bicep
 // https://github.com/Azure/azure-quickstart-templates/blob/master/quickstarts/microsoft.network/route-server/main.bicep
 
-resource rs 'Microsoft.Network/virtualHubs@2022-07-01' = {
-  name: rsName
+resource rtserv 'Microsoft.Network/virtualHubs@2022-09-01' = {
+  name: rtservName
   location: location
   properties: {
     sku: 'Standard'
@@ -55,9 +55,9 @@ resource rs 'Microsoft.Network/virtualHubs@2022-07-01' = {
   }
 }
 
-resource ipconfig 'Microsoft.Network/virtualHubs/ipConfigurations@2022-07-01' = {
+resource ipconfig 'Microsoft.Network/virtualHubs/ipConfigurations@2022-09-01' = {
   name: 'ipconfig1'
-  parent: rs
+  parent: rtserv
   properties: {
     subnet: {
       id: resourceId('Microsoft.Network/virtualNetworks/subnets', vnetName, 'RouteServerSubnet')
@@ -69,12 +69,12 @@ resource ipconfig 'Microsoft.Network/virtualHubs/ipConfigurations@2022-07-01' = 
 }
 
 @batchSize(1)
-resource conn 'Microsoft.Network/virtualHubs/bgpConnections@2022-07-01' = [for (bgpConnection, i) in bgpConnections: {
+resource conn 'Microsoft.Network/virtualHubs/bgpConnections@2022-09-01' = [for (bgpConnection, i) in bgpConnections: {
   dependsOn: [
     ipconfig
   ]
-  name: 'conn-${rsName}-${padLeft(i + 1, 2, '0')}'
-  parent: rs
+  name: 'conn-${rtservName}-${padLeft(i + 1, 2, '0')}'
+  parent: rtserv
   properties: {
     peerAsn: bgpConnection.peerAsn
     peerIp: bgpConnection.peerIp

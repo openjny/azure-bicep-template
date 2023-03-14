@@ -3,11 +3,11 @@
 @description('Region to deploy')
 param location string = resourceGroup().location
 
-@description('VNet name')
-param vnetName string
-
 @description('Bastion host name suffix (e.g. "bas-<suffix>")')
 param nameSuffix string
+
+@description('VNet name')
+param vnetName string
 
 @description('Bastion host SKU')
 @allowed([

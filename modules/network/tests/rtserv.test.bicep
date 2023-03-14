@@ -1,7 +1,7 @@
-// route-server.test.bicep
+// rtserv.test.bicep
 
 param location string = resourceGroup().location
-param envName string = 'mod-rs'
+param envName string = 'mod-rtserv'
 param vnetName string = 'vnet-${envName}'
 
 resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
@@ -24,11 +24,11 @@ resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
   }
 }
 
-module rs '../rs.bicep' = {
+module rtserv '../rtserv.bicep' = {
   dependsOn: [
     vnet
   ]
-  name: 'deploy-rs'
+  name: 'deploy-rtserv'
   params: {
     location: location
     vnetName: vnetName

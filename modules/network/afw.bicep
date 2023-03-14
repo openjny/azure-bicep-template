@@ -1,4 +1,4 @@
-// Azure Firewall
+// afw.bicep - Azure Firewall
 
 @description('Region to deploy')
 param location string = resourceGroup().location
