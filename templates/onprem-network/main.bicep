@@ -28,7 +28,7 @@ var vnetName = 'vnet-${onpremName}'
 var addressPrefix = '${baseNetworkAddress}.0.0/16'
 var subnets = [
   {
-    name: 'default'
+    name: 'snet-default'
     addressPrefix: '${baseNetworkAddress}.0.0/24'
   }
   {
@@ -87,17 +87,18 @@ resource subnetnsg 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
   }
 }
 
-module vmDefault '../../modules/compute-vm/compute-vm.bicep' = {
+module vm_default_01 '../../modules/compute-vm/compute-vm.bicep' = {
   dependsOn: [
     vnet
   ]
-  name: 'deploy-vm-${onpremName}'
+  name: 'deploy-vm-${onpremName}-01'
   params: {
     location: location
-    vmName: '${onpremName}-default'
+    vmName: '${onpremName}-01'
     vnetName: vnetName
-    subnetName: 'default'
+    subnetName: 'snet-default'
     deployPublicIp: true
+    osType: 'Linux'
     adminUsername: adminUsername
     adminPasswordOrKey: adminPassword
     authenticationType: 'password'
@@ -112,7 +113,7 @@ module vpngw '../../modules/vpn-gateway/vpn-gateway.bicep' = if (deployVpnGw) {
   params: {
     location: location
     vnetName: vnetName
-    gwNameSuffix: '${onpremName}-vpngw'
+    vgwNameSuffix: '${onpremName}-vpngw'
     enableBgp: true
     asn: 64512
   }
@@ -122,4 +123,4 @@ module vpngw '../../modules/vpn-gateway/vpn-gateway.bicep' = if (deployVpnGw) {
 // Outputs
 // ----------------------------------------------------------------------------
 
-output vmDefaultHostname string = vmDefault.outputs.hostname
+output vm_default_01 string = vm_default_01.outputs.hostname
