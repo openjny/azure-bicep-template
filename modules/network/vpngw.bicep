@@ -1,11 +1,13 @@
+// VPN Gateway
+
 @description('Region to deploy')
 param location string = resourceGroup().location
 
+@description('VPN Gateway name suffix (e.g. "vpngw-<suffix>")')
+param nameSuffix string
+
 @description('VNet Name')
 param vnetName string
-
-@description('VPN Gateway Name (e.g. vgw-<suffix>)')
-param vgwNameSuffix string
 
 @description('Gateway SKU Name')
 @allowed([
@@ -39,17 +41,18 @@ param asn int = 65515
 @description('Whether Active/Active or Active/Standby')
 param activeActive bool = false
 
-@description('The full ARM resource ID of the Log Analytics workspace to which you would like to send Diagnostic Logs.')
+@description('The resourceid of the Log Analytics Workspace to which you would like to send logs')
 param diagWorkspaceId string = ''
 
-@description('The resource ID of the storage account to which you would like to send Diagnostic Logs.')
+@description('The resourceid of the Storage Account to which you would like to send logs')
 param diagStorageAccountId string = ''
 
 // ----------------------------------------------------------------------------
 // Variables
 // ----------------------------------------------------------------------------
 
-var vgwName = 'vgw-${vgwNameSuffix}'
+var vpngwName = 'vpngw-${nameSuffix}'
+
 var zoneRedundantSkus = [
   'VpnGw1AZ'
   'VpnGw2AZ'
@@ -57,6 +60,7 @@ var zoneRedundantSkus = [
   'VpnGw4AZ'
   'VpnGw5AZ'
 ]
+
 var isZoneRedundant = contains(zoneRedundantSkus, skuName)
 
 // calc the # of required pips
@@ -64,6 +68,7 @@ var numPublicIpAddresses = activeActive ? 2 : 1
 
 // diagnostic settings
 var enableDiagnostics = !(empty(diagWorkspaceId) && empty(diagStorageAccountId))
+
 var retentionPolicy = {
   days: 0
   enabled: false
@@ -74,7 +79,7 @@ var retentionPolicy = {
 // ----------------------------------------------------------------------------
 
 resource pip 'Microsoft.Network/publicIPAddresses@2022-01-01' = [for i in range(0, numPublicIpAddresses): {
-  name: '${vgwName}-pip-${padLeft(i + 1, 2, '0')}'
+  name: '${vpngwName}-pip-${padLeft(i + 1, 2, '0')}'
   location: location
   sku: {
     name: isZoneRedundant ? 'Standard' : 'Basic'
@@ -94,7 +99,7 @@ resource pip 'Microsoft.Network/publicIPAddresses@2022-01-01' = [for i in range(
 // https://docs.microsoft.com/en-us/azure/templates/microsoft.network/virtualnetworkgateways?tabs=bicep
 
 resource vgw 'Microsoft.Network/virtualNetworkGateways@2022-07-01' = {
-  name: vgwName
+  name: vpngwName
   location: location
   properties: {
     gatewayType: 'Vpn'
@@ -125,7 +130,7 @@ resource vgw 'Microsoft.Network/virtualNetworkGateways@2022-07-01' = {
 }
 
 resource diag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (enableDiagnostics) {
-  name: 'diag-${vgwNameSuffix}'
+  name: 'diag-${vpngwName}'
   scope: vgw
   properties: {
     workspaceId: empty(diagWorkspaceId) ? null : diagWorkspaceId

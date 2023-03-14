@@ -1,7 +1,7 @@
 // route-server.test.bicep
 
 param location string = resourceGroup().location
-param envName string = 'module-route-server-test'
+param envName string = 'mod-rs'
 param vnetName string = 'vnet-${envName}'
 
 resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
@@ -24,23 +24,15 @@ resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
   }
 }
 
-// resource snet 'Microsoft.Network/virtualNetworks/subnets@2020-06-01' = {
-//   parent: vnet
-//   name: 'RouteServerSubnet'
-//   properties: {
-//     addressPrefix: '10.0.0.0/24'
-//   }
-// }
-
-module rs '../route-server.bicep' = {
+module rs '../rs.bicep' = {
   dependsOn: [
     vnet
   ]
-  name: 'deploy-${envName}'
+  name: 'deploy-rs'
   params: {
     location: location
     vnetName: vnetName
-    rsNameSuffix: envName
+    nameSuffix: envName
     bgpConnections: [
       {
         peerAsn: 64512

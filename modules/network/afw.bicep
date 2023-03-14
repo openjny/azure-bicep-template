@@ -1,15 +1,15 @@
-// azure-firewall.bicep
+// Azure Firewall
 
 @description('Region to deploy')
 param location string = resourceGroup().location
 
-@description('Azure Firewall name (without prefix "afw-")')
-param afwNameSuffix string
+@description('Azure Firewall name suffix (e.g. "afw-<suffix>")')
+param nameSuffix string
 
 @description('VNet Name')
 param vnetName string
 
-@description('Tier of an Azure Firewall')
+@description('Tier of Azure Firewall')
 @allowed([
   'Basic'
   'Standard'
@@ -17,7 +17,7 @@ param vnetName string
 ])
 param tier string = 'Standard'
 
-@description('The operation mode for Threat Intel.')
+@description('The operation mode for Threat Intel')
 @allowed([
   'Alert'
   'Deny'
@@ -25,6 +25,12 @@ param tier string = 'Standard'
 ])
 param threatIntelMode string = 'Alert'
 
+@description('Availability zone numbers')
+param zones array = [
+  '1'
+  '2'
+  '3'
+]
 @description('Number of public IP addresses')
 param numPublicIpAddresses int = 1
 
@@ -34,15 +40,17 @@ param allowFromRFC1918 bool = true
 // @description('If true, diagnostic logs will be enabled')
 // param enableDiagnostics bool = false
 
-@description('The full ARM resource ID of the Log Analytics workspace to which you would like to send Diagnostic Logs.')
+@description('The full ARM resource ID of the Log Analytics workspace to which you would like to send Diagnostic Logs')
 param diagWorkspaceId string = ''
 
-@description('The resource ID of the storage account to which you would like to send Diagnostic Logs.')
+@description('The resource ID of the storage account to which you would like to send Diagnostic Logs')
 param diagStorageAccountId string = ''
 
 // ----------------------------------------------------------------------------
 // Variables
 // ----------------------------------------------------------------------------
+
+var afwName = 'afw-${nameSuffix}'
 
 var enableDiagnostics = !(empty(diagWorkspaceId) && empty(diagStorageAccountId))
 
@@ -55,8 +63,8 @@ var retentionPolicy = {
 // Resources
 // ----------------------------------------------------------------------------
 
-resource pip 'Microsoft.Network/publicIPAddresses@2021-08-01' = [for i in range(0, numPublicIpAddresses): {
-  name: 'pip-afw-${afwNameSuffix}-${padLeft(i+1, 2, '0')}'
+resource pip 'Microsoft.Network/publicIPAddresses@2022-07-01' = [for i in range(0, numPublicIpAddresses): {
+  name: '${afwName}-pip-${padLeft(i + 1, 2, '0')}'
   location: location
   sku: {
     name: 'Standard'
@@ -65,21 +73,23 @@ resource pip 'Microsoft.Network/publicIPAddresses@2021-08-01' = [for i in range(
     publicIPAllocationMethod: 'Static'
     publicIPAddressVersion: 'IPv4'
   }
+  zones: zones
 }]
 
 // ref: https://docs.microsoft.com/en-us/azure/templates/microsoft.network/azurefirewalls?tabs=bicep
 
-resource afw 'Microsoft.Network/azureFirewalls@2021-08-01' = {
-  name: 'afw-${afwNameSuffix}'
+resource afw 'Microsoft.Network/azureFirewalls@2022-07-01' = {
+  name: afwName
   location: location
+  zones: zones
   properties: {
     sku: {
-      name:'AZFW_VNet'
+      name: 'AZFW_VNet'
       tier: tier
     }
     threatIntelMode: threatIntelMode
     ipConfigurations: [for i in range(0, numPublicIpAddresses): {
-      name: 'ipconfig${i+1}'
+      name: 'ipconfig${i + 1}'
       properties: {
         subnet: (i != 0) ? null : {
           id: resourceId('Microsoft.Network/virtualNetworks/subnets', vnetName, 'AzureFirewallSubnet')
@@ -93,13 +103,13 @@ resource afw 'Microsoft.Network/azureFirewalls@2021-08-01' = {
       {
         name: 'net-rule-collection-01'
         properties: {
-          priority: 200
+          priority: 300
           action: {
             type: 'Allow'
           }
           rules: [
             {
-              name: 'net-rule-rfc1918'
+              name: 'allow-from-rfc1918'
               protocols: [
                 'Any'
               ]
@@ -118,12 +128,12 @@ resource afw 'Microsoft.Network/azureFirewalls@2021-08-01' = {
           ]
         }
       }
-    ] 
+    ]
   }
 }
 
 resource diag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (enableDiagnostics) {
-  name: 'diag-afw-${afwNameSuffix}'
+  name: 'diag-${afwName}'
   scope: afw
   properties: {
     workspaceId: empty(diagWorkspaceId) ? null : diagWorkspaceId

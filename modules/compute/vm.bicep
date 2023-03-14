@@ -1,10 +1,10 @@
 @description('Azure region to deploy')
 param location string = resourceGroup().location
 
-@description('VM Name')
+@description('VM name suffix (e.g. "vm-<suffix>")')
 @minLength(3)
 @maxLength(15)
-param vmName string
+param nameSuffix string
 
 @description('OS Type')
 @allowed([
@@ -29,7 +29,7 @@ param adminPasswordOrKey string = ''
 param authenticationType string = 'password'
 
 @description('VNet Name')
-param vnetName string 
+param vnetName string
 
 @description('Subnet Name')
 param subnetName string
@@ -38,17 +38,17 @@ param subnetName string
 param privateIPAddress string = ''
 
 @description('If true, NIC will have an instance-level Public IP (ILPIP)')
-param deployPublicIp bool = true
+param deployPublicIp bool = false
 
 @description('Domain name label for ILPIP')
-param dnsLabelPrefix string = toLower('${vmName}-${uniqueString(resourceGroup().id, vmName)}')
+param publicIpDomainNameLabel string = toLower('${uniqueString(resourceGroup().id, nameSuffix)}')
 
-@description('SKU for ILPIP')
+@description('SKU for the instance-level PIP')
 @allowed([
   'Basic'
   'Standard'
 ])
-param publicIpSku string = 'Basic'
+param publicIpSku string = 'Standard'
 
 @description('VM size (az vm list-sizes --location <loc>)')
 param vmSize string = 'Standard_B2s'
@@ -56,8 +56,11 @@ param vmSize string = 'Standard_B2s'
 @description('Disk size in GB')
 param osDiskSize int = 32
 
-@description('VM Availability Set ID')
+@description('Availability Set ID for the VM')
 param availabilitySetId string = ''
+
+@description('Zone number for the VM')
+param zone string = ''
 
 @description('CustomData')
 param customData string = ''
@@ -66,11 +69,10 @@ param customData string = ''
 // Variables
 // ----------------------------------------------------------------------------
 
-var nicName = 'nic-${vmName}'
-
-var osDiskName = 'osdisk-${vmName}'
-
-var publicIpName = 'pip-${vmName}'
+var vmName = 'vm-${nameSuffix}'
+var nicName = '${vmName}-nic-01'
+var osDiskName = '${vmName}-osdisk'
+var pipName = '${vmName}-pip'
 
 var subnetId = resourceId('Microsoft.Network/virtualNetworks/subnets', vnetName, subnetName)
 
@@ -110,16 +112,19 @@ var linuxConfigurationForSSH = {
 // ----------------------------------------------------------------------------
 
 resource pip 'Microsoft.Network/publicIPAddresses@2020-05-01' = if (deployPublicIp) {
-  name: publicIpName
+  name: pipName
   location: location
   sku: {
     name: publicIpSku
   }
+  zones: empty(zone) ? null : [
+    zone
+  ]
   properties: {
     publicIPAllocationMethod: (publicIpSku == 'Basic' ? 'Dynamic' : 'Static')
     publicIPAddressVersion: 'IPv4'
     dnsSettings: {
-      domainNameLabel: dnsLabelPrefix
+      domainNameLabel: publicIpDomainNameLabel
     }
   }
 }
@@ -147,8 +152,11 @@ resource nic 'Microsoft.Network/networkInterfaces@2020-05-01' = {
 }
 
 resource vm 'Microsoft.Compute/virtualMachines@2020-06-01' = {
-  name: 'vm-${vmName}'
+  name: vmName
   location: location
+  zones: empty(zone) ? null : [
+    zone
+  ]
   properties: {
     networkProfile: {
       networkInterfaces: [
@@ -178,11 +186,11 @@ resource vm 'Microsoft.Compute/virtualMachines@2020-06-01' = {
       imageReference: imageReferences[osType]
     }
     osProfile: {
-      computerName: vmName
+      computerName: nameSuffix
       adminUsername: adminUsername
       adminPassword: adminPasswordOrKey
       customData: (empty(customData) ? null : customData)
-      linuxConfiguration: (authenticationType == 'ssh' && osType == 'linux') ? linuxConfigurationForSSH : json('null') 
+      linuxConfiguration: (authenticationType == 'ssh' && osType == 'linux') ? linuxConfigurationForSSH : null
       secrets: []
       allowExtensionOperations: true
     }
@@ -193,4 +201,10 @@ resource vm 'Microsoft.Compute/virtualMachines@2020-06-01' = {
 // Outputs
 // ----------------------------------------------------------------------------
 
+output nic object = nic
+
+output adminUsername string = adminUsername
+
 output hostname string = pip.properties.dnsSettings.fqdn
+
+output sshCommand string = 'ssh ${adminUsername}@${pip.properties.ipAddress}'

@@ -1,5 +1,5 @@
 param location string = resourceGroup().location
-param envName string = 'afw-module-test'
+param envName string = 'mod-azfw'
 param vnetName string = 'vnet-${envName}'
 
 resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
@@ -22,14 +22,14 @@ resource afwSubnet 'Microsoft.Network/virtualNetworks/subnets@2020-06-01' = {
   }
 }
 
-module afw '../azure-firewall.bicep' = {
+module afw '../afw.bicep' = {
   dependsOn: [
     afwSubnet
   ]
-  name: 'deploy-${envName}'
-  params:{
+  name: 'deploy-afw'
+  params: {
     location: location
-    afwNameSuffix: envName
+    nameSuffix: envName
     vnetName: vnetName
     numPublicIpAddresses: 2
   }

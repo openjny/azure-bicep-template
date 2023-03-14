@@ -10,6 +10,9 @@ def generate_module_content(name: str) -> str:
 @description('Region to deploy')
 param location string = resourceGroup().location
 
+@description('{name} name suffix (e.g. "-<suffix>")')
+param nameSuffix string
+
 // ----------------------------------------------------------------------------
 // Variables
 // ----------------------------------------------------------------------------
@@ -40,23 +43,26 @@ def normalized_name(name: str) -> str:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="A script to create a new module")
-    parser.add_argument("name", help="The name of a new module")
+    parser = argparse.ArgumentParser(description="Ceate a new module")
+    parser.add_argument("category", help="Resource category (e.g. network)")
+    parser.add_argument("name", help="Resource name (e.g. vpngw)")
     args = parser.parse_args()
 
-    # module name
+    # module category/name
+    category = normalized_name(args.category)
     name = normalized_name(args.name)
 
-    # create folders
     root_path = Path(__file__).resolve().parent
-    (root_path / name / "test").mkdir(parents=True, exist_ok=True)
+    moduel_path = root_path / category / f"{name}.bicep"
+    testfile_path = root_path / category / "test" / f"{name}.test.bicep"
+
+    # create directory
+    (root_path / category / "test").mkdir(parents=True, exist_ok=True)
 
     # write files
-    moduel_path = root_path / name / f"{name}.bicep"
     with moduel_path.open("w", encoding="utf-8") as f:
         f.write(generate_module_content(name))
 
-    testfile_path = root_path / name / "test" / "main.test.bicep"
     with testfile_path.open("w", encoding="utf-8") as f:
         f.write(generate_testfile_content(name))
 
