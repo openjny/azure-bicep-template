@@ -1,5 +1,5 @@
 param location string = resourceGroup().location
-param envName string = 'module-vpn-gateway-test'
+param envName string = 'mod-vpn-gateway'
 param vnetName string = 'vnet-${envName}'
 
 resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
@@ -14,7 +14,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
   }
 }
 
-resource afwSubnet 'Microsoft.Network/virtualNetworks/subnets@2020-06-01' = {
+resource subnet 'Microsoft.Network/virtualNetworks/subnets@2020-06-01' = {
   parent: vnet
   name: 'GatewaySubnet'
   properties: {
@@ -24,10 +24,10 @@ resource afwSubnet 'Microsoft.Network/virtualNetworks/subnets@2020-06-01' = {
 
 module afw '../vpn-gateway.bicep' = {
   dependsOn: [
-    afwSubnet
+    subnet
   ]
   name: 'deploy-${envName}'
-  params:{
+  params: {
     location: location
     vgwNameSuffix: envName
     vnetName: vnetName

@@ -28,13 +28,13 @@ def generate_testfile_content(name: str) -> str:
     return f"""// {name}.test.bicep
 
 param location string = resourceGroup().location
-param envName string = 'module-{name}-test'
+param envName string = 'mod-{name}'
 """
 
 
 def normalized_name(name: str) -> str:
     s = name.strip().lower()
-    s = s.replace('_', '-')
+    s = s.replace("_", "-")
     s = re.sub(r"\s+", "-", s)
     return s
 
