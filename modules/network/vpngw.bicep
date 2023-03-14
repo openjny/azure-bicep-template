@@ -6,7 +6,7 @@ param location string = resourceGroup().location
 @description('VPN Gateway name suffix (e.g. "vpngw-<suffix>")')
 param nameSuffix string
 
-@description('VNet Name')
+@description('VNet name')
 param vnetName string
 
 @description('Gateway SKU Name')
@@ -78,7 +78,7 @@ var retentionPolicy = {
 // Resources
 // ----------------------------------------------------------------------------
 
-resource pip 'Microsoft.Network/publicIPAddresses@2022-01-01' = [for i in range(0, numPublicIpAddresses): {
+resource pip 'Microsoft.Network/publicIPAddresses@2022-09-01' = [for i in range(0, numPublicIpAddresses): {
   name: '${vpngwName}-pip-${padLeft(i + 1, 2, '0')}'
   location: location
   sku: {
@@ -98,7 +98,7 @@ resource pip 'Microsoft.Network/publicIPAddresses@2022-01-01' = [for i in range(
 // ref:
 // https://docs.microsoft.com/en-us/azure/templates/microsoft.network/virtualnetworkgateways?tabs=bicep
 
-resource vgw 'Microsoft.Network/virtualNetworkGateways@2022-07-01' = {
+resource vpngw 'Microsoft.Network/virtualNetworkGateways@2022-09-01' = {
   name: vpngwName
   location: location
   properties: {
@@ -131,7 +131,7 @@ resource vgw 'Microsoft.Network/virtualNetworkGateways@2022-07-01' = {
 
 resource diag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (enableDiagnostics) {
   name: 'diag-${vpngwName}'
-  scope: vgw
+  scope: vpngw
   properties: {
     workspaceId: empty(diagWorkspaceId) ? null : diagWorkspaceId
     storageAccountId: empty(diagStorageAccountId) ? null : diagStorageAccountId
@@ -161,4 +161,4 @@ output pip array = [for i in range(0, numPublicIpAddresses): {
   pip: pip[i]
 }]
 
-output vgw object = vgw
+output vpngw object = vpngw

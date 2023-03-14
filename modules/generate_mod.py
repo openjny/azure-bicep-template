@@ -10,7 +10,7 @@ def generate_module_content(name: str) -> str:
 @description('Region to deploy')
 param location string = resourceGroup().location
 
-@description('{name} name suffix (e.g. "-<suffix>")')
+@description('{name} name suffix (e.g. "{name}-<suffix>")')
 param nameSuffix string
 
 // ----------------------------------------------------------------------------
@@ -52,12 +52,13 @@ def main():
     category = normalized_name(args.category)
     name = normalized_name(args.name)
 
+    # directory
     root_path = Path(__file__).resolve().parent
     moduel_path = root_path / category / f"{name}.bicep"
-    testfile_path = root_path / category / "test" / f"{name}.test.bicep"
+    testfile_path = root_path / category / "tests" / f"{name}.test.bicep"
 
-    # create directory
-    (root_path / category / "test").mkdir(parents=True, exist_ok=True)
+    # set up directories
+    (root_path / category / "tests").mkdir(parents=True, exist_ok=True)
 
     # write files
     with moduel_path.open("w", encoding="utf-8") as f:
