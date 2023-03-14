@@ -152,7 +152,7 @@ resource diag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (e
 // Outputs
 // ----------------------------------------------------------------------------
 
-output public_ip_addresses array = [for i in range(0, numPublicIpAddresses): {
+output pip array = [for i in range(0, numPublicIpAddresses): {
   pip: pip[i]
 }]
 
