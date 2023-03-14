@@ -4,7 +4,7 @@ param location string = resourceGroup().location
 @description('VNet Name')
 param vnetName string
 
-@description('VPN Gateway Name (without prefix "vgw-")')
+@description('VPN Gateway Name (e.g. vgw-<suffix>)')
 param vgwNameSuffix string
 
 @description('Gateway SKU Name')
@@ -49,12 +49,13 @@ param diagStorageAccountId string = ''
 // Variables
 // ----------------------------------------------------------------------------
 
+var vgwName = 'vgw-${vgwNameSuffix}'
 var zoneRedundantSkus = [
   'VpnGw1AZ'
   'VpnGw2AZ'
   'VpnGw3AZ'
   'VpnGw4AZ'
-  'VpnGw5AZ'  
+  'VpnGw5AZ'
 ]
 var isZoneRedundant = contains(zoneRedundantSkus, skuName)
 
@@ -72,8 +73,8 @@ var retentionPolicy = {
 // Resources
 // ----------------------------------------------------------------------------
 
-resource pip 'Microsoft.Network/publicIPAddresses@2021-08-01' = [for i in range(0, numPublicIpAddresses): {
-  name: 'pip-vgw-${vgwNameSuffix}-${padLeft(i+1, 2, '0')}'
+resource pip 'Microsoft.Network/publicIPAddresses@2022-01-01' = [for i in range(0, numPublicIpAddresses): {
+  name: '${vgwName}-pip-${padLeft(i + 1, 2, '0')}'
   location: location
   sku: {
     name: isZoneRedundant ? 'Standard' : 'Basic'
@@ -92,8 +93,8 @@ resource pip 'Microsoft.Network/publicIPAddresses@2021-08-01' = [for i in range(
 // ref:
 // https://docs.microsoft.com/en-us/azure/templates/microsoft.network/virtualnetworkgateways?tabs=bicep
 
-resource vgw 'Microsoft.Network/virtualNetworkGateways@2020-06-01' = {
-  name: 'vgw-${vgwNameSuffix}'
+resource vgw 'Microsoft.Network/virtualNetworkGateways@2022-07-01' = {
+  name: vgwName
   location: location
   properties: {
     gatewayType: 'Vpn'
@@ -124,7 +125,7 @@ resource vgw 'Microsoft.Network/virtualNetworkGateways@2020-06-01' = {
 }
 
 resource diag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (enableDiagnostics) {
-  name: 'diag-afw-${vgwNameSuffix}'
+  name: 'diag-${vgwNameSuffix}'
   scope: vgw
   properties: {
     workspaceId: empty(diagWorkspaceId) ? null : diagWorkspaceId
@@ -151,7 +152,8 @@ resource diag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (e
 // Outputs
 // ----------------------------------------------------------------------------
 
-output public_ip_addresses array = [for i in range(0, numPublicIpAddresses): {
+output pip array = [for i in range(0, numPublicIpAddresses): {
   pip: pip[i]
 }]
+
 output vgw object = vgw

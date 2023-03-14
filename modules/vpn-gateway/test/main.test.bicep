@@ -1,5 +1,5 @@
 param location string = resourceGroup().location
-param envName string = 'module-vpn-gateway-test'
+param envName string = 'mod-vpn-gateway'
 param vnetName string = 'vnet-${envName}'
 
 resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
@@ -27,7 +27,7 @@ module vpn_gateway '../vpn-gateway.bicep' = {
     gateway_subnet
   ]
   name: 'deploy-${envName}'
-  params:{
+  params: {
     location: location
     vgwNameSuffix: envName
     vnetName: vnetName
