@@ -28,6 +28,9 @@ param enableBgp bool = true
 @description('AS number of VPN Gateway')
 param asn int = 65000
 
+@description('deploys Bastion Host')
+param deployBastion bool = false
+
 // Variables
 // ----------------------------------------------------------------------------
 
@@ -144,6 +147,16 @@ module vpngw '../../modules/network/vpngw.bicep' = if (deployVpnGateway) {
     vnetName: vnetName
     enableBgp: enableBgp
     asn: asn
+  }
+}
+
+module bastion '../../modules/network/bastion.bicep' = if (deployBastion) {
+  name: 'deploy-bastion'
+  params: {
+    location: location
+    nameSuffix: envName
+    vnetName: vnetName
+    skuName: 'Standard'
   }
 }
 
