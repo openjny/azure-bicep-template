@@ -45,9 +45,6 @@ param lbBackendPoolId string = ''
 @description('Deploys instance-level public IP if true')
 param deployPublicIp bool = false
 
-@description('PIP domain name label')
-param publicIpDomainNameLabel string = toLower('${uniqueString(resourceGroup().id, nameSuffix)}')
-
 @description('PIP SKU')
 @allowed([
   'Basic'
@@ -134,9 +131,6 @@ resource pip 'Microsoft.Network/publicIPAddresses@2022-09-01' = if (deployPublic
   properties: {
     publicIPAllocationMethod: (publicIpSku == 'Basic' ? 'Dynamic' : 'Static')
     publicIPAddressVersion: 'IPv4'
-    dnsSettings: {
-      domainNameLabel: publicIpDomainNameLabel
-    }
   }
 }
 
@@ -156,7 +150,7 @@ resource nic 'Microsoft.Network/networkInterfaces@2022-09-01' = {
           publicIPAddress: !(deployPublicIp) ? null : {
             id: pip.id
           }
-          loadBalancerBackendAddressPools: [
+          loadBalancerBackendAddressPools: empty(lbBackendPoolId) ? null : [
             {
               id: lbBackendPoolId
             }
@@ -224,7 +218,5 @@ resource vm 'Microsoft.Compute/virtualMachines@2022-11-01' = {
 // ----------------------------------------------------------------------------
 
 output adminUsername string = adminUsername
-
-output hostname string = pip.properties.dnsSettings.fqdn
 
 output sshCommand string = 'ssh ${adminUsername}@${pip.properties.ipAddress}'
