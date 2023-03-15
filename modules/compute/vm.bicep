@@ -8,6 +8,11 @@ param location string = resourceGroup().location
 @maxLength(15)
 param nameSuffix string
 
+@description('Host name')
+@minLength(1)
+@maxLength(15)
+param computerName string = nameSuffix
+
 @description('OS Type')
 @allowed([
   'Linux'
@@ -56,7 +61,7 @@ param publicIpSku string = 'Standard'
 param vmSize string = 'Standard_B2s'
 
 @description('Disk size in GB')
-param osDiskSize int = 32
+param osDiskSize int = 128
 
 @description('Availability set Id (opt)')
 param availabilitySetId string = ''
@@ -196,7 +201,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2022-11-01' = {
       imageReference: imageReferences[osType]
     }
     osProfile: {
-      computerName: nameSuffix
+      computerName: computerName
       adminUsername: adminUsername
       adminPassword: adminPasswordOrKey
       customData: empty(customData) ? null : customData
