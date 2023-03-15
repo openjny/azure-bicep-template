@@ -163,5 +163,3 @@ module bastion '../../modules/network/bastion.bicep' = if (deployBastion) {
 // ----------------------------------------------------------------------------
 // Outputs
 // ----------------------------------------------------------------------------
-
-output vmHostname string = vm.outputs.hostname
