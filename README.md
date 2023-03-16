@@ -10,6 +10,7 @@ RG="rg-test"
 
 az group create --name $RG --location $LOC
 az deployment group create -g $RG --template-file main.bicep
+az deployment group create -g $rg --template-file main.bicep --parameters sourceAddressPrefix=$(curl -4s ifconfig.me)
 ```
 
 ## Advanced usage
@@ -19,7 +20,7 @@ Azure CLI on bash
 ```bash
 ADMIN_USERNAME="azureuser"
 ADMIN_PASSWORD="strongpasswordhere"
-SOURCE_ADDRESS_PREFIX="$(curl ifconfig.me)"
+SOURCE_ADDRESS_PREFIX="$(curl -4s ifconfig.me)"
 
 params = "adminUsername=$ADMIN_USERNAME adminPassword=$ADMIN_PASSWORD sourceAddressPrefix=$SOURCE_ADDRESS_PREFIX"
 az deployment group create -g $RG --template-file main.bicep --parameters $params
@@ -30,7 +31,7 @@ Azure CLI on PowerShell
 ```powershell
 $ADMIN_USERNAME="azureuser"
 $ADMIN_PASSWORD="strongpasswordhere"
-$SOURCE_ADDRESS_PREFIX=$(curl.exe -4 ifconfig.co)
+$SOURCE_ADDRESS_PREFIX=$(curl.exe -4s ifconfig.co)
 
 $params = @{
     adminUsername = @{value = $ADMIN_USERNAME}
