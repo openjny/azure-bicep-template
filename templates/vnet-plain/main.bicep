@@ -1,15 +1,15 @@
 // vnet-plain
 
-@description('location')
+@description('Region to deploy')
 param location string = resourceGroup().location
 
-@description('environment name')
+@description('Environment name')
 param envName string
 
-@description('ip address used in VNet up to the 2nd octet (e.g. 192.168, 172.16, 10.0, etc)')
-param baseNetworkAddress string = '192.168'
+@description('VNet address range up to the 2nd octet (e.g. 192.168, 172.16, 10.0, etc)')
+param baseAddressSpace string = '192.168'
 
-@description('')
+@description('Source IP address that VMs are accessed from')
 param sourceAddressPrefix string = ''
 
 @description('VM username')
@@ -19,47 +19,47 @@ param adminUsername string = 'azureuser'
 @secure()
 param adminPassword string
 
-@description('deploys VPN Gateway')
-param deployVpnGateway bool = false
+@description('Deploy VPN Gateway')
+param deployVpnGateway bool = true
 
-@description('enables BGP on VPN Gatweay')
+@description('Enable BGP on VPN Gatweay')
 param enableBgp bool = true
 
 @description('AS number of VPN Gateway')
 param asn int = 65000
 
-@description('deploys Bastion Host')
+@description('Deploy Bastion Host')
 param deployBastion bool = false
 
 // Variables
 // ----------------------------------------------------------------------------
 
 var vnetName = 'vnet-${envName}'
-var addressPrefix = '${baseNetworkAddress}.0.0/16'
+var addressSpace = '${baseAddressSpace}.0.0/16'
 var subnets = [
   {
     name: 'default'
-    addressPrefix: '${baseNetworkAddress}.0.0/24'
+    addressPrefix: '${baseAddressSpace}.0.0/24'
   }
   {
     name: 'AzureBastionSubnet'
-    addressPrefix: '${baseNetworkAddress}.100.0/24'
+    addressPrefix: '${baseAddressSpace}.100.0/24'
   }
   {
     name: 'GatewaySubnet'
-    addressPrefix: '${baseNetworkAddress}.101.0/24'
+    addressPrefix: '${baseAddressSpace}.101.0/24'
   }
   {
     name: 'RouteServerSubnet'
-    addressPrefix: '${baseNetworkAddress}.102.0/24'
+    addressPrefix: '${baseAddressSpace}.102.0/24'
   }
   {
     name: 'AzureFirewallSubnet'
-    addressPrefix: '${baseNetworkAddress}.200.0/24'
+    addressPrefix: '${baseAddressSpace}.200.0/24'
   }
   {
     name: 'AzureFirewallManagementSubnet'
-    addressPrefix: '${baseNetworkAddress}.201.0/24'
+    addressPrefix: '${baseAddressSpace}.201.0/24'
   }
 ]
 
@@ -81,7 +81,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
   properties: {
     addressSpace: {
       addressPrefixes: [
-        addressPrefix
+        addressSpace
       ]
     }
     subnets: [for (subnet, i) in subnets: {
@@ -122,10 +122,10 @@ module vm '../../modules/compute/vm.bicep' = {
   dependsOn: [
     vnet
   ]
-  name: 'deploy-vm-${envName}-01'
+  name: 'deploy-vm-${envName}'
   params: {
     location: location
-    nameSuffix: '${envName}-01'
+    nameSuffix: envName
     vnetName: vnetName
     subnetName: 'default'
     deployPublicIp: true
