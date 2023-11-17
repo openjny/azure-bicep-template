@@ -26,7 +26,7 @@ param adminUsername string
 @description('password or sshkey')
 @minLength(12)
 @secure()
-param adminPasswordOrKey string = ''
+param adminPasswordOrKey string
 
 @description('Authentication type')
 @allowed([
