@@ -23,7 +23,7 @@ param osType string = 'Linux'
 @description('Username')
 param adminUsername string
 
-@description('password or sshkey')
+@description('パスワードの場合は12文字以上で英大文字・小文字・数字・記号を含めることを推奨。SSHキーの場合は有効な公開鍵形式（ssh-rsa等）を指定してください。')
 @minLength(12)
 @secure()
 param adminPasswordOrKey string
