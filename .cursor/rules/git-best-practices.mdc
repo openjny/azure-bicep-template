@@ -1,0 +1,24 @@
+---
+description: For actions related to git command
+globs: 
+alwaysApply: false
+---
+## git
+
+- メインブランチは常に安定状態で、作業はfeatureやfixブランチで実施する
+- ブランチ名はわかりやすく、チケット番号や内容を含める
+- 定期的にmainブランチ(remote含む)の変更を取り込み、なるべくconflictの発生を抑える。
+- 1コミットは1つの目的に絞り、大きな変更は複数コミットに分ける
+
+## git - commit
+
+- Converntional Commits に従い、commit message は以下のフォーマットを取る
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+- 説明は、命令形で、何を、なぜ変更したかを明確にする
+- タイプは、feat,fix,refactor,test,build,ci,docs,chore を使用する
