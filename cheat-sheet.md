@@ -1,72 +1,46 @@
-## Bicep: Cheat Sheet
+# Bicep: Cheat Sheet
 
-## Parameter
+## 命名規則
+
+命名規則の目的
+- リソース名は一意である必要がある。
+- 環境ごとに区別できるようにする。
+- 意味のある名前にして、リソースの用途や環境がわかるようにする。
+- Azureリソースごとに名前の長さや使用可能な文字に制限があるため、それに準拠する。
+
+命名規則のベストプラクティス
+- 小文字のキャメルケース（lower camel case）を使う例が多い。
+- uniqueString()関数を使って、リソースグループIDなどを元に一意の文字列を生成し、名前の一部に含める。
+- 名前はテンプレート式で組み立てる（例: ${shortAppName}-${environment}-${uniqueString(resourceGroup().id)}）。
+- 名前の先頭に数字が来ないようにプレフィックスを付ける（特にストレージアカウントなど）。
+- 変数やパラメータ名にnameを使わず、リソースを表す名前にする（例: cosmosDBAccountなど）。
+- パラメータの文字数制限を設けて、名前の長さ制限に対応する。
+
+命名規則の構成例
+- リソースタイプの略称（例: vnetはVirtual Network）
+- ワークロードやアプリケーション名
+- 環境名の略称（例: dev, prd）
+- Azureリージョンの略称（例: nweはNorway East）
+- インスタンス識別子（例: 001やmain）
+
+## パターン
+
+グローバルに固有な値を取得する
 
 ```bicep
 param uniqueName string = '${uniqueString(resourceGroup().id)}'
-
-@secure()
-param password string
-
-# Description
-@description('Must be at least Standard_A3 to support 2 NICs.')
-param shortDescription string
-
-@description('''
-Storage account name restrictions:
-- Storage account names must be between 3 and 24 characters in length and may contain numbers and lowercase letters only.
-- Your storage account name must be unique within Azure. No two storage accounts can have the same name.
-''')
-param longDescription string
-
-@allowed([
-  'one'
-  'two'
-])
-param enumVariable string
-
-@minLength(3)
-@maxLength(24)
-param storageAccountName string
-
-@minValue(1)
-@maxValue(12)
-param month int
 ```
 
-```bicep
-param vNetSettings object = {
-  name: 'VNet1'
-  location: 'eastus'
-  addressPrefixes: [
-    {
-      name: 'firstPrefix'
-      addressPrefix: '10.0.0.0/22'
-    }
-  ]
-  subnets: [
-    {
-      name: 'firstSubnet'
-      addressPrefix: '10.0.0.0/24'
-    }
-    {
-      name: 'secondSubnet'
-      addressPrefix: '10.0.1.0/24'
-    }
-  ]
-}
-```
-
-Configuration Pattern
+パラメータと hashed-map を組み合わせる
 
 ```bicep
 @allowed([
   'test'
   'prod'
 ])
-param environmentName string
+param envName string
 
-var environmentSettings = {
+var envSettings = {
   test: {
     instanceSize: 'Small'
     instanceCount: 1
@@ -77,21 +51,17 @@ var environmentSettings = {
   }
 }
 
-output instanceSize string = environmentSettings[environmentName].instanceSize
-output instanceCount int = environmentSettings[environmentName].instanceCount
+// envSettings[envName].instanceSize などを使用する
 ```
 
-## Condition
+条件
 
 ```bicep
 param deployStorage bool = true
-param storageName string
-param location string = resourceGroup().location
 
 resource myStorageAccount 'Microsoft.Storage/storageAccounts@2019-06-01' = if (deployStorage) {
   name: storageName
-  location: location
-  ...
+  // and more
 }
 
 output endpoint string = deployStorage ? myStorageAccount.properties.primaryEndpoints.blob : ''
